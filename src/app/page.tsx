@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import DiscountSection from "@/components/homepage/DiscountSection";
 import HeroSlider from "@/components/homepage/HeroSlider";
+import NewArrivals from "@/components/homepage/NewArrivals";
 
 export default function HomePage() {
   return (
@@ -12,6 +13,7 @@ export default function HomePage() {
       <Suspense fallback={<div className="h-[70vh] w-full bg-[#0F4A6B]" />}>
         <HeroSlider />
       </Suspense>
+      <NewArrivals></NewArrivals>
       <DiscountSection></DiscountSection>
 
       {/* পরবর্তীতে অন্যান্য সেকশন (Categories, Featured Books ইত্যাদি) এখানে আসবে */}
