@@ -188,7 +188,7 @@ export default function BookDetails({ params }: BookDetailsProps) {
                 </button>
 
                 <Link
-                  href="/books"
+                  href="/all-books"
                   className="px-5 py-3.5 rounded-xl text-sm font-medium text-[#0F4A6B] border border-[#D5E4EF] hover:bg-[#EAF2F8]"
                 >
                   Back to all books

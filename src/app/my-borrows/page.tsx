@@ -129,7 +129,7 @@ export default function MyBorrowsPage() {
               {borrows.length} {borrows.length === 1 ? "Book Borrowed" : "Books Borrowed"}
             </span>
             <Link
-              href="/books"
+              href="/all-books"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#0F4A6B] hover:bg-[#0C3B56] shadow-xs transition-colors"
             >
               Borrow More
