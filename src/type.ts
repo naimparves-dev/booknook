@@ -12,3 +12,18 @@ export interface Book {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface BorrowRecord {
+  _id?: string;
+  id?: string | number;
+  bookId: string;
+  bookTitle: string;
+  bookImage?: string;
+  authorName?: string;
+  category?: string;
+  userName: string;
+  userEmail: string;
+  borrowDate: string;
+  returnDate: string;
+  status?: string;
+}
