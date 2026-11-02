@@ -1,7 +1,8 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, jwt } from "better-auth";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 import { getGoogleAuthConfig } from "@/lib/google-auth";
+import { jwtClient } from "better-auth/client/plugins";
 
 const client = new MongoClient(process.env.MONGO_URI as string);
 const db = client.db("book-nook");
@@ -23,12 +24,22 @@ export const auth = betterAuth({
     },
     ...(google
         ? {
-              socialProviders: {
-                  google: {
-                      clientId: google.clientId,
-                      clientSecret: google.clientSecret,
-                  },
-              },
-          }
+            socialProviders: {
+                google: {
+                    clientId: google.clientId,
+                    clientSecret: google.clientSecret,
+                },
+            },
+        }
         : {}),
+    plugins: [
+        jwtClient(),
+    ],
+    session:{
+        cookieCache:{
+            enabled:true,
+            strategy:"jwt",
+            maxAge:7*24*60*60,
+        }
+    }
 });

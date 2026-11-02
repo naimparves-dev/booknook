@@ -1,3 +1,4 @@
+import { jwtClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
 /**
@@ -12,8 +13,12 @@ import { createAuthClient } from "better-auth/react";
  * separate books/borrows API on port 5000, which has no auth routes and
  * answers `/api/auth/*` with a 404 — sign-in/sign-up silently fail there.
  */
-export const authClient = createAuthClient();
 
+export const authClient = createAuthClient({
+  plugins: [
+    jwtClient() 
+  ]
+})
 // Convenience re-exports so callers can import just the piece they need.
 export const { signIn, signUp, signOut, useSession } = authClient;
 
