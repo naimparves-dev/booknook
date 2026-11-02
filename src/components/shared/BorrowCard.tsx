@@ -12,18 +12,20 @@ interface BorrowCardProps {
 
 export default function BorrowCard({ borrow, onReturn }: BorrowCardProps) {
   const [isReturning, setIsReturning] = useState(false);
-  const borrowId = borrow._id || borrow.id || "";
+  const borrowId = String(borrow._id || borrow.id || "");
+  const bookId = String(borrow.bookId || "");
 
   const handleReturnClick = async () => {
     if (isReturning || !borrowId) return;
     setIsReturning(true);
     try {
-      await onReturn(borrowId, borrow.bookId);
+      await onReturn(borrowId, bookId);
     } finally {
       setIsReturning(false);
     }
   };
 
+  // Format date helper (e.g., "Oct 29, 2026")
   const formatDate = (dateString?: string) => {
     if (!dateString) return "N/A";
     try {
@@ -34,7 +36,7 @@ export default function BorrowCard({ borrow, onReturn }: BorrowCardProps) {
         year: "numeric",
       });
     } catch {
-      return dateString;
+      return String(dateString);
     }
   };
 
@@ -42,6 +44,7 @@ export default function BorrowCard({ borrow, onReturn }: BorrowCardProps) {
     <>
       {/* Desktop Table Row (Matching attached screenshot layout) */}
       <tr className="hidden md:table-row border-b border-slate-200/80 hover:bg-white/60 transition-colors">
+        {/* Book Thumbnail Image */}
         <td className="py-4 px-6 align-middle">
           <div className="relative w-12 h-16 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shadow-xs shrink-0">
             {borrow.bookImage ? (
@@ -62,9 +65,10 @@ export default function BorrowCard({ borrow, onReturn }: BorrowCardProps) {
           </div>
         </td>
 
+        {/* Book Title */}
         <td className="py-4 px-6 align-middle">
           <Link
-            href={`/books/${borrow.bookId}`}
+            href={`/books/${bookId}`}
             className="font-bold text-[#0F172A] hover:text-[#0F4A6B] transition-colors line-clamp-2 max-w-sm"
           >
             {borrow.bookTitle}
@@ -74,14 +78,17 @@ export default function BorrowCard({ borrow, onReturn }: BorrowCardProps) {
           )}
         </td>
 
+        {/* Borrow Date */}
         <td className="py-4 px-6 align-middle text-sm text-[#475569] font-medium whitespace-nowrap">
           {formatDate(borrow.borrowDate)}
         </td>
 
+        {/* Return Date */}
         <td className="py-4 px-6 align-middle text-sm text-[#475569] font-medium whitespace-nowrap">
           {formatDate(borrow.returnDate)}
         </td>
 
+        {/* Action Button: Return Book */}
         <td className="py-4 px-6 align-middle text-right whitespace-nowrap">
           <button
             type="button"
@@ -124,7 +131,7 @@ export default function BorrowCard({ borrow, onReturn }: BorrowCardProps) {
 
           <div className="flex-1 min-w-0">
             <Link
-              href={`/books/${borrow.bookId}`}
+              href={`/books/${bookId}`}
               className="font-bold text-sm text-[#0F172A] hover:text-[#0F4A6B] line-clamp-2"
             >
               {borrow.bookTitle}

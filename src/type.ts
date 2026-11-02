@@ -1,6 +1,6 @@
 export interface Book {
   _id?: string;
-  id?: string | number;
+  id?: string;
   bookTitle: string;
   authorName: string;
   category: string;
@@ -15,7 +15,7 @@ export interface Book {
 
 export interface BorrowRecord {
   _id?: string;
-  id?: string | number;
+  id?: string;
   bookId: string;
   bookTitle: string;
   bookImage?: string;

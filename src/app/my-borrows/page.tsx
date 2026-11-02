@@ -27,7 +27,7 @@ export default function MyBorrowsPage() {
         const res = await fetch(`${serverUrl}/borrows?email=${encodeURIComponent(session.user.email)}`, {
           cache: "no-store",
         });
-
+        console.log(res,"from ");
         if (!res.ok) {
           throw new Error("Failed to fetch borrowed books");
         }
