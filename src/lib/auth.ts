@@ -1,19 +1,18 @@
 import { betterAuth } from "better-auth";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
+import { getGoogleAuthConfig } from "@/lib/google-auth";
 
 const client = new MongoClient(process.env.MONGO_URI as string);
-const db = client.db();
+const db = client.db("book-nook");
 
 /**
  * Google OAuth is optional: the provider is only registered when both
  * credentials are present, so the app boots fine without them.
- * The login page reads `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED` to decide whether
- * to render the "Continue with Google" button.
+ * The auth pages read the same helper, so the "Continue with Google"
+ * button always matches what is actually registered here.
  */
-const googleClientId = process.env.GOOGLE_CLIENT_ID;
-const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
-const googleEnabled = Boolean(googleClientId && googleClientSecret);
+const google = getGoogleAuthConfig();
 
 export const auth = betterAuth({
     database: mongodbAdapter(db, {
@@ -22,17 +21,14 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
     },
-    ...(googleEnabled
+    ...(google
         ? {
               socialProviders: {
                   google: {
-                      clientId: googleClientId as string,
-                      clientSecret: googleClientSecret as string,
+                      clientId: google.clientId,
+                      clientSecret: google.clientSecret,
                   },
               },
           }
         : {}),
 });
-
-/** Whether the server has Google sign-in configured. */
-export const isGoogleAuthEnabled = googleEnabled;
