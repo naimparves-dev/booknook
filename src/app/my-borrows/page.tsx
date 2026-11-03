@@ -8,6 +8,8 @@ import { authClient } from "@/lib/auth-client";
 import BorrowCard from "@/components/shared/BorrowCard";
 
 export default function MyBorrowsPage() {
+  // Identity for the fetch below — access is enforced by `src/proxy.ts`,
+  // which redirects signed-out visitors to /login before this renders.
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const [borrows, setBorrows] = useState<BorrowRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,6 @@ export default function MyBorrowsPage() {
         const res = await fetch(`${serverUrl}/borrows?email=${encodeURIComponent(session.user.email)}`, {
           cache: "no-store",
         });
-        console.log(res,"from ");
         if (!res.ok) {
           throw new Error("Failed to fetch borrowed books");
         }
@@ -68,43 +69,6 @@ export default function MyBorrowsPage() {
       alert("Failed to return the book. Please try again.");
     }
   };
-
-  // 1. Session Loading State
-  if (sessionPending) {
-    return (
-      <div className="w-full min-h-[65vh] bg-[#F1F6F9] flex items-center justify-center p-6">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-[#0F4A6B]/20 border-t-[#0F4A6B] rounded-full animate-spin" />
-          <p className="text-sm font-medium text-[#64748B]">Checking your session...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // 2. Unauthenticated State (Prompt to sign in)
-  if (!session?.user) {
-    return (
-      <div className="w-full min-h-[70vh] bg-[#F1F6F9] flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-3xl border border-[#E2EEF6] p-8 sm:p-10 text-center shadow-sm">
-          <div className="w-14 h-14 rounded-2xl bg-[#EAF2F8] text-[#0F4A6B] flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-[#0F172A] mb-2">Sign in required</h2>
-          <p className="text-sm text-[#64748B] mb-6">
-            Please log in with your BookNook account to view and manage your borrowed books.
-          </p>
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center w-full px-6 py-3.5 rounded-xl font-semibold text-sm text-white bg-[#0F4A6B] hover:bg-[#0C3B56] shadow-sm transition-all"
-          >
-            Go to Login
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full min-h-screen bg-[#F1F6F9] py-8 sm:py-12 lg:py-16">

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { describeAuthError } from "@/lib/auth-errors";
+import { getPostLoginRedirect, readRedirectParam } from "@/lib/redirect";
 import {
   AuthErrorAlert,
   AuthSpinner,
@@ -114,8 +115,9 @@ export default function RegisterForm({ googleEnabled }: { googleEnabled: boolean
       }
 
       // The session cookie is set by the server, so refresh the cached
-      // server components (Navbar) and land on the homepage.
-      router.push("/");
+      // server components (Navbar) and head back to the page the proxy
+      // bounced the user from (or home when there is none).
+      router.push(getPostLoginRedirect());
       router.refresh();
     } catch (err) {
       setError(describeAuthError(err, "Could not create your account. Please try again."));
@@ -136,6 +138,7 @@ export default function RegisterForm({ googleEnabled }: { googleEnabled: boolean
     try {
       await authClient.signIn.social({
         provider: "google",
+        callbackURL: getPostLoginRedirect(),
       });
       // The client is redirected to Google, so nothing else runs here.
     } catch {
@@ -289,6 +292,14 @@ export default function RegisterForm({ googleEnabled }: { googleEnabled: boolean
           <Link
             href="/login"
             className="font-semibold text-[#F97316] transition-colors hover:text-[#EA580C] hover:underline"
+            onClick={(event) => {
+              // Keep the proxy's destination alive across the detour back
+              // to the sign-in screen.
+              const target = readRedirectParam();
+              if (!target) return;
+              event.preventDefault();
+              router.push(`/login?redirect=${encodeURIComponent(target)}`);
+            }}
           >
             Login
           </Link>

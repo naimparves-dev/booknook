@@ -16,6 +16,8 @@ import {
 import MyBookCard from "@/components/shared/MyBookCard";
 
 export default function MyBooksPage() {
+  // Identity for the fetch below — access is enforced by `src/proxy.ts`,
+  // which redirects signed-out visitors to /login before this renders.
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,43 +130,6 @@ export default function MyBooksPage() {
       setIsUpdating(false);
     }
   };
-
-  // 1. Session Loading
-  if (sessionPending) {
-    return (
-      <div className="w-full min-h-[65vh] bg-[#F1F6F9] flex items-center justify-center p-6">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-[#0F4A6B]/20 border-t-[#0F4A6B] rounded-full animate-spin" />
-          <p className="text-sm font-medium text-[#64748B]">Checking your session...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // 2. Unauthenticated State
-  if (!session?.user) {
-    return (
-      <div className="w-full min-h-[70vh] bg-[#F1F6F9] flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-3xl border border-[#E2EEF6] p-8 sm:p-10 text-center shadow-sm">
-          <div className="w-14 h-14 rounded-2xl bg-[#EAF2F8] text-[#0F4A6B] flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-[#0F172A] mb-2">Sign in required</h2>
-          <p className="text-sm text-[#64748B] mb-6">
-            Please log in to manage your contributed books in the BookNook community library.
-          </p>
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center w-full px-6 py-3.5 rounded-xl font-semibold text-sm text-white bg-[#0F4A6B] hover:bg-[#0C3B56] shadow-sm transition-all"
-          >
-            Go to Login
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full min-h-screen bg-[#F1F6F9] py-8 sm:py-12 lg:py-16">

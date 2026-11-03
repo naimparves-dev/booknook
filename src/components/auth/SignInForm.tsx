@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { describeAuthError } from "@/lib/auth-errors";
+import { getPostLoginRedirect, readRedirectParam } from "@/lib/redirect";
 import {
   AuthErrorAlert,
   AuthSpinner,
@@ -43,12 +44,12 @@ export default function SignInForm({ googleEnabled }: { googleEnabled: boolean }
       });
 
       if (signInError) {
-        setError(describeAuthError(signInError));
+        setError(describeAuthError(signInError, "Could not sign you in. Please try again."));
         return;
       }
 
-      // Successful sign-in — land the user on the home page.
-      router.push("/");
+      // Back to the page src/proxy.ts bounced them from, or home.
+      router.push(getPostLoginRedirect());
       router.refresh();
     } catch {
       setError("Something went wrong while signing you in. Please try again.");
@@ -63,10 +64,11 @@ export default function SignInForm({ googleEnabled }: { googleEnabled: boolean }
     setError(null);
 
     try {
-      // `callbackURL` is intentionally omitted: after the OAuth round-trip
-      // Better Auth lands back on `/` on its own.
+      // `callbackURL` sends the user back to the page the proxy bounced
+      // them from after the OAuth round-trip; it falls back to `/`.
       await authClient.signIn.social({
         provider: "google",
+        callbackURL: getPostLoginRedirect(),
       });
       // The client is redirected to Google, so nothing else runs here.
     } catch {
@@ -195,6 +197,14 @@ export default function SignInForm({ googleEnabled }: { googleEnabled: boolean }
             <Link
               href="/register"
               className="font-semibold text-[#F97316] transition-colors hover:text-[#ea6a09]"
+              onClick={(event) => {
+                // Keep the proxy's destination alive across the detour to
+                // the sign-up screen.
+                const target = readRedirectParam();
+                if (!target) return;
+                event.preventDefault();
+                router.push(`/register?redirect=${encodeURIComponent(target)}`);
+              }}
             >
               Register
             </Link>

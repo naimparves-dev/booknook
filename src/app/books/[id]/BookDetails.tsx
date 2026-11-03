@@ -54,10 +54,10 @@ export default function BookDetails({ params }: BookDetailsProps) {
     e.preventDefault();
     if (!book || book.totalCopies <= 0 || isSubmitting) return;
 
-    // Guard against submitting without a session (e.g. cookie expired).
+    // Cookie expired mid-session: send them back to this book after login.
     if (!user) {
       setIsOpen(false);
-      router.push("/login");
+      router.push(`/login?redirect=${encodeURIComponent(`/books/${id}`)}`);
       return;
     }
 
@@ -92,11 +92,12 @@ export default function BookDetails({ params }: BookDetailsProps) {
     }
   };
 
-  // Only signed-in users may open the borrow dialog; everyone else is
-  // redirected to the login screen.
+  // This route is public (the proxy only guards /add-book, /my-books,
+  // /my-borrows and /profile), so borrowing still has to bounce signed-out
+  // visitors to login and bring them straight back here afterwards.
   const handleBorrowClick = () => {
     if (!user) {
-      router.push("/login");
+      router.push(`/login?redirect=${encodeURIComponent(`/books/${id}`)}`);
       return;
     }
     setIsOpen(true);

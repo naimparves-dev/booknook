@@ -1,7 +1,6 @@
 
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { authClient } from "@/lib/auth-client";
@@ -9,18 +8,13 @@ import { authClient } from "@/lib/auth-client";
 export default function AddBookPage() {
   const router = useRouter();
 
-  // Real Better Auth session — the contributor fields are derived from it.
-  const { data: session, isPending } = authClient.useSession();
+  // Identity only — access is enforced by `src/proxy.ts`, which redirects
+  // signed-out visitors to /login before this page ever renders.
+  const { data: session } = authClient.useSession();
   const user = session?.user ?? null;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    // Never let an unauthenticated (or still-resolving) user submit.
-    if (!user) {
-      router.push("/login");
-      return;
-    }
 
     const formData = new FormData(e.currentTarget);
 
@@ -33,8 +27,8 @@ export default function AddBookPage() {
       description: formData.get("description"),
       // Always taken from the authenticated session, never from the form,
       // so the fields cannot be tampered with.
-      username: user.name,
-      userEmail: user.email,
+      username: user?.name ?? "",
+      userEmail: user?.email ?? "",
     };
 
     try {
@@ -55,68 +49,6 @@ export default function AddBookPage() {
       console.error("Failed to add book:", err);
     }
   };
-
-  /* ------------------------- Session gate states ------------------------- */
-
-  // Session still resolving: keep the page shell, show a lightweight notice.
-  if (isPending) {
-    return (
-      <div className="w-full min-h-screen bg-[#F1F6F9] flex flex-col items-center justify-center gap-4 px-4">
-        <svg className="h-8 w-8 animate-spin text-[#0F4A6B]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-        </svg>
-        <p className="text-sm text-[#64748B]">Checking your session…</p>
-      </div>
-    );
-  }
-
-  // Not signed in: friendly prompt instead of a dead form.
-  if (!user) {
-    return (
-      <div className="w-full min-h-screen bg-[#F1F6F9] flex items-center justify-center px-4 py-16">
-        <div className="w-full max-w-md rounded-3xl border border-[#E2EEF6] bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF4ED]">
-            <svg
-              className="h-7 w-7 text-[#F97316]"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
-          </div>
-
-          <h1 className="text-xl font-extrabold text-[#0F172A]">You need to sign in</h1>
-          <p className="mt-2 text-sm text-[#64748B]">
-            Please log in to your BookNook account to contribute a new book to the community
-            library.
-          </p>
-
-          <div className="mt-6 flex flex-col gap-3">
-            <Link
-              href="/login"
-              className="inline-flex w-full items-center justify-center rounded-xl bg-[#0F4A6B] px-6 py-3 font-semibold text-white shadow-md transition-all hover:bg-[#0C3B56]"
-            >
-              Login to continue
-            </Link>
-            <Link
-              href="/register"
-              className="inline-flex w-full items-center justify-center rounded-xl border border-[#D5E4EF] px-6 py-3 font-semibold text-[#0F4A6B] transition-colors hover:bg-[#EAF2F8]"
-            >
-              Create an account
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   /* ------------------------------ Signed in ------------------------------ */
 
@@ -312,7 +244,7 @@ export default function AddBookPage() {
                       type="text"
                       id="username"
                       name="username"
-                      value={user.name}
+                      value={user?.name ?? ""}
                       readOnly
                       disabled
                       className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-[#F8FAFC] text-[#64748B] text-sm cursor-not-allowed shadow-xs"
@@ -337,7 +269,7 @@ export default function AddBookPage() {
                       type="email"
                       id="userEmail"
                       name="userEmail"
-                      value={user.email}
+                      value={user?.email ?? ""}
                       readOnly
                       disabled
                       className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-[#F8FAFC] text-[#64748B] text-sm cursor-not-allowed shadow-xs"
