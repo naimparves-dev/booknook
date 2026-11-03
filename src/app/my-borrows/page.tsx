@@ -2,14 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-// import BorrowCard from "@/components/books/BorrowCard";
 import { BorrowRecord } from "@/type";
 import { authClient } from "@/lib/auth-client";
 import BorrowCard from "@/components/shared/BorrowCard";
 
 export default function MyBorrowsPage() {
-  // Identity for the fetch below — access is enforced by `src/proxy.ts`,
-  // which redirects signed-out visitors to /login before this renders.
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const [borrows, setBorrows] = useState<BorrowRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,9 +116,9 @@ export default function MyBorrowsPage() {
           </div>
         ) : borrows.length > 0 ? (
           <div className="bg-white rounded-3xl border border-[#E2EEF6] shadow-sm overflow-hidden">
-            {/* Desktop Table View (Matching attached image layout) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            {/* Responsive Table View: Pure <tbody> with <tr> children */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[640px]">
                 <thead>
                   <tr className="bg-[#111827] text-slate-300 text-xs font-semibold uppercase tracking-wider border-b border-slate-800">
                     <th scope="col" className="py-4 px-6">Image</th>
@@ -142,17 +139,6 @@ export default function MyBorrowsPage() {
                 </tbody>
               </table>
             </div>
-
-            {/* Mobile Stacked Card View */}
-            <div className="md:hidden p-4 space-y-3">
-              {borrows.map((borrow) => (
-                <BorrowCard
-                  key={borrow._id || borrow.id}
-                  borrow={borrow}
-                  onReturn={handleReturnBook}
-                />
-              ))}
-            </div>
           </div>
         ) : (
           /* Empty State when no borrowings */
@@ -167,7 +153,7 @@ export default function MyBorrowsPage() {
               You haven&apos;t borrowed any books from BookNook yet. Browse our collection and pick your favorite title!
             </p>
             <Link
-              href="/books"
+              href="/all-books"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white bg-[#0F4A6B] hover:bg-[#0C3B56] shadow-sm transition-all"
             >
               Browse Books
