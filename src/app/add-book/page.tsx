@@ -3,7 +3,9 @@
 
 import { useRouter } from "next/navigation";
 import React from "react";
+import { toast } from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
+import { describeApiError, readApiError } from "@/lib/api-error";
 
 export default function AddBookPage() {
   const router = useRouter();
@@ -12,6 +14,34 @@ export default function AddBookPage() {
   // signed-out visitors to /login before this page ever renders.
   const { data: session } = authClient.useSession();
   const user = session?.user ?? null;
+
+  /**
+   * Native validation still runs and shows its own bubble; this mirrors the
+   * outcome into a toast so the problem is also announced as a notification.
+   * The fixed id keeps a form with several empty fields to one toast.
+   */
+  const handleInvalidField = (event: React.SyntheticEvent<Element>) => {
+    const field = event.target as HTMLInputElement;
+
+    if (field.validity.valueMissing) {
+      const label = field.labels?.[0]?.textContent?.replace(/\*/g, "").trim();
+      toast.error(label ? `Please fill in ${label}.` : "Please fill in all required fields.", {
+        id: "add-book-validation",
+      });
+      return;
+    }
+
+    if (field.type === "url" && field.validity.typeMismatch) {
+      toast.error("Please enter a valid image URL, including https://", {
+        id: "add-book-validation",
+      });
+      return;
+    }
+
+    toast.error(field.validationMessage || "Please check this field and try again.", {
+      id: "add-book-validation",
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -40,13 +70,20 @@ export default function AddBookPage() {
         body: JSON.stringify(bookData),
       });
 
-      if (result.ok) {
-        router.push("/all-books");
-      } else {
-        console.error("Failed to add book:", await result.text());
+      if (!result.ok) {
+        const message = await readApiError(result, "Failed to add the book. Please try again.");
+        console.error("Failed to add book:", message);
+        toast.error(message, { id: "add-book" });
+        return;
       }
+
+      toast.success("Book added successfully!", { id: "add-book" });
+      router.push("/all-books");
     } catch (err) {
       console.error("Failed to add book:", err);
+      toast.error(describeApiError(err, "Failed to add the book. Please try again."), {
+        id: "add-book",
+      });
     }
   };
 
@@ -75,7 +112,7 @@ export default function AddBookPage() {
         {/* Main Form Card */}
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-[#E2EEF6] p-6 sm:p-10 lg:p-12">
 
-          <form className="space-y-8" onSubmit={handleSubmit}>
+          <form className="space-y-8" onSubmit={handleSubmit} onInvalidCapture={handleInvalidField}>
 
             {/* Section 1: Book Information */}
             <div>

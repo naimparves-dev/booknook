@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
@@ -31,6 +32,32 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Navbar></Navbar>
         {children}
         <Footer></Footer>
+
+        {/* App-wide toast notifications, styled to match BookNook. */}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              maxWidth: "24rem",
+              padding: "12px 16px",
+              borderRadius: "12px",
+              background: "#FFFFFF",
+              color: "#0F172A",
+              border: "1px solid #E2EEF6",
+              boxShadow: "0 10px 25px -5px rgba(15, 74, 107, 0.16)",
+              fontSize: "14px",
+              fontWeight: 500,
+              lineHeight: 1.4,
+            },
+            success: {
+              iconTheme: { primary: "#0F4A6B", secondary: "#FFFFFF" },
+            },
+            error: {
+              iconTheme: { primary: "#DC2626", secondary: "#FFFFFF" },
+            },
+          }}
+        />
       </body>
     </html>
   );

@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { describeAuthError } from "@/lib/auth-errors";
 import { getPostLoginRedirect, readRedirectParam } from "@/lib/redirect";
+import { toast } from "react-hot-toast";
 import {
   AuthErrorAlert,
   AuthSpinner,
@@ -56,6 +57,15 @@ export default function RegisterForm({ googleEnabled }: { googleEnabled: boolean
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  /**
+   * Surfaces a message in the inline alert (existing behaviour) *and* as a
+   * toast. The fixed id keeps repeated failures from stacking up.
+   */
+  const showError = (message: string) => {
+    setError(message);
+    toast.error(message, { id: "signup" });
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submitting || googleLoading) return; // guard against double-submit
@@ -69,21 +79,22 @@ export default function RegisterForm({ googleEnabled }: { googleEnabled: boolean
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!trimmedName || !trimmedEmail || !password) {
-      setError("Please fill in your name, email, and password.");
+      showError("Please fill in your name, email, and password.");
       return;
     }
     if (trimmedName.length < 2) {
-      setError("Your name must be at least 2 characters long.");
+      showError("Your name must be at least 2 characters long.");
       return;
     }
     if (!emailPattern.test(trimmedEmail)) {
-      setError("Please enter a valid email address.");
+      showError("Please enter a valid email address.");
       return;
     }
     // Better Auth rejects passwords shorter than 8 characters by default,
-    // so we surface the same rule here for instant feedback.
+    // so we surface the same rule here for instant feedback — the form
+    // never reaches the API with an invalid password.
     if (password.length < 8) {
-      setError("Password must be at least 8 characters long.");
+      showError("Password must be at least 8 characters long.");
       return;
     }
     if (trimmedAvatar) {
@@ -93,7 +104,7 @@ export default function RegisterForm({ googleEnabled }: { googleEnabled: boolean
           throw new Error("unsupported protocol");
         }
       } catch {
-        setError("Please enter a valid avatar URL (including http/https).");
+        showError("Please enter a valid avatar URL (including http/https).");
         return;
       }
     }
@@ -110,9 +121,11 @@ export default function RegisterForm({ googleEnabled }: { googleEnabled: boolean
       });
 
       if (signUpError) {
-        setError(describeAuthError(signUpError, "Could not create your account. Please try again."));
+        showError(describeAuthError(signUpError, "Could not create your account. Please try again."));
         return;
       }
+
+      toast.success("Account created! Welcome to BookNook.", { id: "signup" });
 
       // The session cookie is set by the server, so refresh the cached
       // server components (Navbar) and head back to the page the proxy
@@ -120,7 +133,7 @@ export default function RegisterForm({ googleEnabled }: { googleEnabled: boolean
       router.push(getPostLoginRedirect());
       router.refresh();
     } catch (err) {
-      setError(describeAuthError(err, "Could not create your account. Please try again."));
+      showError(describeAuthError(err, "Could not create your account. Please try again."));
     } finally {
       setSubmitting(false);
     }
@@ -136,13 +149,21 @@ export default function RegisterForm({ googleEnabled }: { googleEnabled: boolean
     setError(null);
 
     try {
-      await authClient.signIn.social({
+      const { error: socialError } = await authClient.signIn.social({
         provider: "google",
         callbackURL: getPostLoginRedirect(),
       });
+
+      // Better Auth reports OAuth problems on the result instead of throwing.
+      if (socialError) {
+        showError(describeAuthError(socialError, "Could not start Google sign-up. Please try again."));
+        setGoogleLoading(false);
+        return;
+      }
+
       // The client is redirected to Google, so nothing else runs here.
     } catch {
-      setError("Could not start Google sign-up. Please try again.");
+      showError("Could not start Google sign-up. Please try again.");
       setGoogleLoading(false);
     }
   };

@@ -5,8 +5,10 @@ import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 import { Book } from "@/type";
 import { authClient } from "@/lib/auth-client";
+import { describeApiError, readApiError } from "@/lib/api-error";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +20,38 @@ import {
 
 interface BookDetailsProps {
   params: Promise<{ id: string }>;
+}
+
+/**
+ * The borrow API has no duplicate guard, so ask it whether this borrower
+ * already holds a copy of the title.
+ *
+ * Returns `false` when the check cannot be completed — the POST below will
+ * surface any real problem rather than silently blocking a valid borrow.
+ */
+async function hasExistingBorrow(
+  serverUrl: string | undefined,
+  email: string,
+  bookId: string,
+): Promise<boolean> {
+  if (!serverUrl) return false;
+
+  try {
+    const res = await fetch(
+      `${serverUrl}/borrows?email=${encodeURIComponent(email)}`,
+      { cache: "no-store" },
+    );
+    if (!res.ok) return false;
+
+    const data: unknown = await res.json();
+    const list: Array<{ bookId?: string }> = Array.isArray(data)
+      ? (data as Array<{ bookId?: string }>)
+      : ((data as { borrows?: Array<{ bookId?: string }> })?.borrows ?? []);
+
+    return list.some((record) => record.bookId === bookId);
+  } catch {
+    return false;
+  }
 }
 
 export default function BookDetails({ params }: BookDetailsProps) {
@@ -42,6 +76,9 @@ export default function BookDetails({ params }: BookDetailsProps) {
         setBook(data.book || data);
       } catch (err) {
         console.error("Failed to load book:", err);
+        toast.error(describeApiError(err, "We could not load this book. Please try again."), {
+          id: "load-book",
+        });
       } finally {
         setLoading(false);
       }
@@ -52,7 +89,15 @@ export default function BookDetails({ params }: BookDetailsProps) {
   // Handle Confirm Borrow
   const handleBorrow = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!book || book.totalCopies <= 0 || isSubmitting) return;
+    if (!book) return;
+
+    // Prevent duplicate borrow requests while one is already in flight.
+    if (isSubmitting) return;
+
+    if (book.totalCopies <= 0) {
+      toast.error("No copies of this book are available right now.", { id: "borrow" });
+      return;
+    }
 
     // Cookie expired mid-session: send them back to this book after login.
     if (!user) {
@@ -62,8 +107,11 @@ export default function BookDetails({ params }: BookDetailsProps) {
     }
 
     setIsSubmitting(true);
+
+    const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
+    const bookId = book._id || id;
     const borrowData = {
-      bookId: book._id || id,
+      bookId,
       bookTitle: book.bookTitle,
       bookImage: book.bookImage,
       authorName: book.authorName,
@@ -76,17 +124,35 @@ export default function BookDetails({ params }: BookDetailsProps) {
     };
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/borrows`, {
+      if (await hasExistingBorrow(serverUrl, user.email, bookId)) {
+        toast.error("You have already borrowed this book.", { id: "borrow" });
+        return;
+      }
+
+      const res = await fetch(`${serverUrl}/borrows`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(borrowData),
       });
 
+      if (!res.ok) {
+        toast.error(await readApiError(res, "Could not borrow this book. Please try again."), {
+          id: "borrow",
+        });
+        return;
+      }
+
       // Update state locally
       setBook((prev) => (prev ? { ...prev, totalCopies: prev.totalCopies - 1 } : null));
       setIsOpen(false);
+      toast.success(`You borrowed “${book.bookTitle}”. Please return it within 7 days.`, {
+        id: "borrow",
+      });
     } catch (err) {
       console.error("Borrow error:", err);
+      toast.error(describeApiError(err, "Could not borrow this book. Please try again."), {
+        id: "borrow",
+      });
     } finally {
       setIsSubmitting(false);
     }

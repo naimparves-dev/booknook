@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { toast } from "react-hot-toast";
 import { BorrowRecord } from "@/type";
 import { authClient } from "@/lib/auth-client";
+import { describeApiError, readApiError } from "@/lib/api-error";
 import BorrowCard from "@/components/shared/BorrowCard";
 
 export default function MyBorrowsPage() {
@@ -27,13 +29,16 @@ export default function MyBorrowsPage() {
           cache: "no-store",
         });
         if (!res.ok) {
-          throw new Error("Failed to fetch borrowed books");
+          throw new Error(await readApiError(res, "Failed to fetch your borrowed books."));
         }
 
         const data = await res.json();
         setBorrows(Array.isArray(data) ? data : data.borrows || []);
       } catch (err) {
         console.error("Error fetching my borrows:", err);
+        toast.error(describeApiError(err, "We could not load your borrows. Please try again."), {
+          id: "fetch-my-borrows",
+        });
       } finally {
         setLoading(false);
       }
@@ -53,17 +58,22 @@ export default function MyBorrowsPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to return book");
+        throw new Error(await readApiError(res, "Failed to return the book."));
       }
 
       // Immediately remove from local state so the item leaves the page instantly
       setBorrows((prev) => prev.filter((b) => (b._id || b.id) !== borrowId));
 
       setNotification("Book returned successfully! Stock has been updated.");
+      toast.success("Book returned successfully! Stock has been updated.", {
+        id: "return-book",
+      });
       setTimeout(() => setNotification(null), 3000);
     } catch (err) {
       console.error("Error returning book:", err);
-      alert("Failed to return the book. Please try again.");
+      toast.error(describeApiError(err, "Failed to return the book. Please try again."), {
+        id: "return-book",
+      });
     }
   };
 

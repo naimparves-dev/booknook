@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { describeAuthError } from "@/lib/auth-errors";
 import { getPostLoginRedirect, readRedirectParam } from "@/lib/redirect";
+import { toast } from "react-hot-toast";
 import {
   AuthErrorAlert,
   AuthSpinner,
@@ -31,6 +32,15 @@ export default function SignInForm({ googleEnabled }: { googleEnabled: boolean }
   const [googleLoading, setGoogleLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  /**
+   * Surfaces a message in the inline alert (existing behaviour) *and* as a
+   * toast. The fixed id keeps repeated failures from stacking up.
+   */
+  const showError = (message: string) => {
+    setError(message);
+    toast.error(message, { id: "auth" });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting || googleLoading) return;
@@ -44,15 +54,17 @@ export default function SignInForm({ googleEnabled }: { googleEnabled: boolean }
       });
 
       if (signInError) {
-        setError(describeAuthError(signInError, "Could not sign you in. Please try again."));
+        showError(describeAuthError(signInError, "Could not sign you in. Please try again."));
         return;
       }
+
+      toast.success("Welcome back! You are signed in.", { id: "auth" });
 
       // Back to the page src/proxy.ts bounced them from, or home.
       router.push(getPostLoginRedirect());
       router.refresh();
     } catch {
-      setError("Something went wrong while signing you in. Please try again.");
+      showError("Something went wrong while signing you in. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -66,13 +78,21 @@ export default function SignInForm({ googleEnabled }: { googleEnabled: boolean }
     try {
       // `callbackURL` sends the user back to the page the proxy bounced
       // them from after the OAuth round-trip; it falls back to `/`.
-      await authClient.signIn.social({
+      const { error: socialError } = await authClient.signIn.social({
         provider: "google",
         callbackURL: getPostLoginRedirect(),
       });
+
+      // Better Auth reports OAuth problems on the result instead of throwing.
+      if (socialError) {
+        showError(describeAuthError(socialError, "Could not start Google sign-in. Please try again."));
+        setGoogleLoading(false);
+        return;
+      }
+
       // The client is redirected to Google, so nothing else runs here.
     } catch {
-      setError("Could not start Google sign-in. Please try again.");
+      showError("Could not start Google sign-in. Please try again.");
       setGoogleLoading(false);
     }
   };

@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { toast } from "react-hot-toast";
 // import MyBookCard from "@/components/books/MyBookCard";
 import { Book } from "@/type";
 import { authClient } from "@/lib/auth-client";
+import { describeApiError, readApiError } from "@/lib/api-error";
 import {
   Dialog,
   DialogContent,
@@ -44,13 +46,16 @@ export default function MyBooksPage() {
         });
 
         if (!res.ok) {
-          throw new Error("Failed to fetch your books");
+          throw new Error(await readApiError(res, "We could not load your books."));
         }
 
         const data = await res.json();
         setBooks(Array.isArray(data) ? data : data.books || []);
       } catch (err) {
         console.error("Error fetching my books:", err);
+        toast.error(describeApiError(err, "We could not load your books. Please try again."), {
+          id: "fetch-my-books",
+        });
       } finally {
         setLoading(false);
       }
@@ -70,16 +75,19 @@ export default function MyBooksPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to delete book");
+        throw new Error(await readApiError(res, "Failed to delete the book."));
       }
 
       // Immediately filter out from UI
       setBooks((prev) => prev.filter((b) => (b._id || b.id) !== bookId));
       setNotification("Book deleted successfully!");
+      toast.success("Book deleted successfully!", { id: "delete-book" });
       setTimeout(() => setNotification(null), 3000);
     } catch (err) {
       console.error("Delete error:", err);
-      alert("Failed to delete the book. Please try again.");
+      toast.error(describeApiError(err, "Failed to delete the book. Please try again."), {
+        id: "delete-book",
+      });
     }
   };
 
@@ -110,7 +118,7 @@ export default function MyBooksPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to update book");
+        throw new Error(await readApiError(res, "Failed to update the book."));
       }
 
       // Update local state
@@ -122,10 +130,13 @@ export default function MyBooksPage() {
 
       setEditingBook(null);
       setNotification("Book details updated successfully!");
+      toast.success("Book updated successfully!", { id: "update-book" });
       setTimeout(() => setNotification(null), 3000);
     } catch (err) {
       console.error("Update error:", err);
-      alert("Failed to update book. Please try again.");
+      toast.error(describeApiError(err, "Failed to update the book. Please try again."), {
+        id: "update-book",
+      });
     } finally {
       setIsUpdating(false);
     }
