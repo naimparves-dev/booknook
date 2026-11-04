@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📚 BookNook — Community Library & Book Sharing Platform
 
-## Getting Started
+> **Live Client Application:** [https://booknook-client.vercel.app](https://booknook-client.vercel.app) 
+> **Backend API Service:** [https://booknook-server.onrender.com](https://booknook-server.onrender.com) 
+---
 
-First, run the development server:
+## 🌟 Key Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+* **Community-Driven Book Discovery & Genre Exploration:** ব্যবহারকারীরা সহজেই বিভিন্ন ক্যাটাগরির (Fiction, Sci-Fi, Biography, Technology ইত্যাদি) বই ব্রাউজ করতে পারবেন এবং বইয়ের বিস্তারিত বিবরণ ও কভার দেখতে পারবেন।
+* **Smart Real-Time Borrowing & Inventory Tracking:** লগইন করা ব্যবহারকারী সহজেই ৭ দিনের জন্য বই ধার নিতে পারবেন। বই ধার নিলে ডাটাবেজে স্বয়ংক্রিয়ভাবে কপি সংখ্যা ১ কমে যায় এবং একই বই দ্বিতীয়বার ধার নেওয়া রোধ করা হয়।
+* **Book Return & Automated Restocking:** "My Borrows" পেজ থেকে ধার করা বই এক ক্লিকে ফেরত (Return) দেওয়া যায়, যা ব্যাকএন্ড ডাটাবেজে তাৎক্ষণিকভাবে বইয়ের কপি সংখ্যা ১ বাড়িয়ে দেয় (+1)।
+* **Contributor Management Dashboard:** ব্যবহারকারীরা তাদের নিজেদের ব্যক্তিগত কালেকশন থেকে নতুন বই যোগ করতে পারেন এবং "My Books" ড্যাশবোর্ড থেকে যে কোনো সময় বইয়ের তথ্য এডিট বা ডিলিট করতে পারেন।
+* **Enterprise-Grade Cryptographic Security (Better Auth & JWT):** Better Auth দিয়ে গুগল ও ক্রেডেনশিয়াল লগইন হ্যান্ডেল করা হয়েছে এবং এক্সপ্রেস ব্যাকএন্ডের প্রতিটি প্রাইভেট এন্ডপয়েন্ট `jose` ও `JWKS` ভিত্তিক ডিজিটাল JWT টোকেন দিয়ে সুরক্ষিত।
+* **Modern & Responsive UI/UX:** Next.js 16 App Router, React 19 এবং Tailwind CSS v4 দিয়ে তৈরি, যা মোবাইল, ট্যাবলেট এবং ডেস্কটপ সব ডিভাইসেই দ্রুত ও মসৃণভাবে চলে।
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Frontend (Client)
+* **Framework:** Next.js 16 (App Router, Turbopack, React 19)
+* **Styling:** Tailwind CSS v4
+* **Authentication:** Better Auth (`@better-auth/client`, `jwtClient`)
+* **State & Fetching:** Centralized API client with JWT caching & retry (`@/lib/api`)
+* **UI Components:** Radix UI / Shadcn UI Dialogs, Swiper.js, React Hot Toast
 
-## Learn More
+### Backend (Server)
+* **Runtime:** Node.js & Express.js
+* **Database:** MongoDB Atlas (Collections: `books`, `borrows`)
+* **Security:** `jose` (JWKS remote verification via `/api/auth/jwks`), CORS
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
