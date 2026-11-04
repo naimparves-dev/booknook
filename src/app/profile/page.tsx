@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/api";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -27,15 +28,13 @@ export default function ProfilePage() {
 
       try {
         setStatsLoading(true);
-        const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
-        if (!serverUrl) return;
 
         const email = encodeURIComponent(session.user.email);
 
         // Fetch borrowed count and contributed books count in parallel
         const [borrowsRes, booksRes] = await Promise.all([
-          fetch(`${serverUrl}/borrows?email=${email}`, { cache: "no-store" }).catch(() => null),
-          fetch(`${serverUrl}/my-books?email=${email}`, { cache: "no-store" }).catch(() => null),
+          apiFetch(`/borrows?email=${email}`, { cache: "no-store" }).catch(() => null),
+          apiFetch(`/my-books?email=${email}`, { cache: "no-store" }).catch(() => null),
         ]);
 
         if (borrowsRes && borrowsRes.ok) {

@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import Link from "next/link";
 import { Book } from "@/type";
+import { serverApiFetch } from "@/lib/server-api";
 import BookCard from "@/components/shared/BooksCard";
 
 export const metadata = {
@@ -17,7 +18,10 @@ export default function AllBooksPage() {
 }
 
 const AllBooks = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/books`);
+    // Public endpoint, but sent through serverApiFetch so the request
+    // carries the same `Authorization: Bearer <jwt>` the rest of the app
+    // uses — the backend can tighten this route later without a code change.
+    const res = await serverApiFetch("/books");
     const books: Book[] = await res.json();
 
     return (

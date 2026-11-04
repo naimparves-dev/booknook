@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { BorrowRecord } from "@/type";
 import { authClient } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/api";
 import { describeApiError, readApiError } from "@/lib/api-error";
 import BorrowCard from "@/components/shared/BorrowCard";
 
@@ -24,8 +25,7 @@ export default function MyBorrowsPage() {
 
       try {
         setLoading(true);
-        const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
-        const res = await fetch(`${serverUrl}/borrows?email=${encodeURIComponent(session.user.email)}`, {
+        const res = await apiFetch(`/borrows?email=${encodeURIComponent(session.user.email)}`, {
           cache: "no-store",
         });
         if (!res.ok) {
@@ -52,8 +52,7 @@ export default function MyBorrowsPage() {
   // Handle Returning a book: deletes from borrows, triggers backend stock increment, updates UI
   const handleReturnBook = async (borrowId: string, bookId: string) => {
     try {
-      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
-      const res = await fetch(`${serverUrl}/borrows/${borrowId}`, {
+      const res = await apiFetch(`/borrows/${borrowId}`, {
         method: "DELETE",
       });
 

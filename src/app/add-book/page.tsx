@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { toast } from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/api";
 import { describeApiError, readApiError } from "@/lib/api-error";
 
 export default function AddBookPage() {
@@ -62,7 +63,7 @@ export default function AddBookPage() {
     };
 
     try {
-      const result = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/books`, {
+      const result = await apiFetch("/books", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

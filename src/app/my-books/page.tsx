@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
-// import MyBookCard from "@/components/books/MyBookCard";
 import { Book } from "@/type";
 import { authClient } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/api";
 import { describeApiError, readApiError } from "@/lib/api-error";
 import {
   Dialog,
@@ -18,8 +18,6 @@ import {
 import MyBookCard from "@/components/shared/MyBookCard";
 
 export default function MyBooksPage() {
-  // Identity for the fetch below — access is enforced by `src/proxy.ts`,
-  // which redirects signed-out visitors to /login before this renders.
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,9 +37,7 @@ export default function MyBooksPage() {
 
       try {
         setLoading(true);
-        const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
-        // Fetches by userEmail query parameter
-        const res = await fetch(`${serverUrl}/my-books?email=${encodeURIComponent(session.user.email)}`, {
+        const res = await apiFetch(`/my-books?email=${encodeURIComponent(session.user.email)}`, {
           cache: "no-store",
         });
 
@@ -69,8 +65,7 @@ export default function MyBooksPage() {
   // Handle Delete Book
   const handleDeleteBook = async (bookId: string) => {
     try {
-      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
-      const res = await fetch(`${serverUrl}/books/${bookId}`, {
+      const res = await apiFetch(`/books/${bookId}`, {
         method: "DELETE",
       });
 
@@ -78,7 +73,6 @@ export default function MyBooksPage() {
         throw new Error(await readApiError(res, "Failed to delete the book."));
       }
 
-      // Immediately filter out from UI
       setBooks((prev) => prev.filter((b) => (b._id || b.id) !== bookId));
       setNotification("Book deleted successfully!");
       toast.success("Book deleted successfully!", { id: "delete-book" });
@@ -110,8 +104,7 @@ export default function MyBooksPage() {
     const bookId = editingBook._id || editingBook.id;
 
     try {
-      const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
-      const res = await fetch(`${serverUrl}/books/${bookId}`, {
+      const res = await apiFetch(`/books/${bookId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedData),
@@ -121,7 +114,6 @@ export default function MyBooksPage() {
         throw new Error(await readApiError(res, "Failed to update the book."));
       }
 
-      // Update local state
       setBooks((prev) =>
         prev.map((b) =>
           (b._id || b.id) === bookId ? { ...b, ...updatedData } : b
@@ -194,9 +186,9 @@ export default function MyBooksPage() {
           </div>
         ) : books.length > 0 ? (
           <div className="bg-white rounded-3xl border border-[#E2EEF6] shadow-sm overflow-hidden">
-            {/* Desktop Table View (Matching attached image layout) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            {/* একক রেসপন্সিভ টেবিল - কোনো ইনভ্যালিড div নেই */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[640px]">
                 <thead>
                   <tr className="bg-[#111827] text-slate-300 text-xs font-semibold uppercase tracking-wider border-b border-slate-800">
                     <th scope="col" className="py-4 px-6">Book</th>
@@ -217,21 +209,9 @@ export default function MyBooksPage() {
                 </tbody>
               </table>
             </div>
-
-            {/* Mobile Stacked Card View */}
-            <div className="md:hidden p-4 space-y-3">
-              {books.map((book) => (
-                <MyBookCard
-                  key={book._id || book.id}
-                  book={book}
-                  onEdit={(b) => setEditingBook(b)}
-                  onDelete={handleDeleteBook}
-                />
-              ))}
-            </div>
           </div>
         ) : (
-          /* Empty State when user hasn't added books */
+          /* Empty State */
           <div className="bg-white rounded-3xl border border-[#E2EEF6] p-10 sm:p-16 text-center max-w-lg mx-auto shadow-sm my-6">
             <div className="w-16 h-16 rounded-2xl bg-[#EAF2F8] text-[#0F4A6B] flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
@@ -266,7 +246,6 @@ export default function MyBooksPage() {
             </DialogHeader>
 
             <form onSubmit={handleUpdateBook} className="space-y-4 pt-2">
-              {/* Title */}
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-[#1E293B]">Book Title *</label>
                 <input
@@ -278,7 +257,6 @@ export default function MyBooksPage() {
                 />
               </div>
 
-              {/* Author */}
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-[#1E293B]">Author Name *</label>
                 <input
@@ -290,7 +268,6 @@ export default function MyBooksPage() {
                 />
               </div>
 
-              {/* Category & Copies Grid */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#1E293B]">Category *</label>
@@ -325,7 +302,6 @@ export default function MyBooksPage() {
                 </div>
               </div>
 
-              {/* Image URL */}
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-[#1E293B]">Book Image URL *</label>
                 <input
@@ -337,7 +313,6 @@ export default function MyBooksPage() {
                 />
               </div>
 
-              {/* Description */}
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-[#1E293B]">Description *</label>
                 <textarea

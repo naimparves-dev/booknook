@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, use } from "react";
@@ -8,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { Book } from "@/type";
 import { authClient } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/api";
 import { describeApiError, readApiError } from "@/lib/api-error";
 import {
   Dialog,
@@ -23,24 +23,17 @@ interface BookDetailsProps {
 }
 
 /**
- * The borrow API has no duplicate guard, so ask it whether this borrower
- * already holds a copy of the title.
+ * Checks whether this borrower already holds a copy of the book.
  *
- * Returns `false` when the check cannot be completed — the POST below will
- * surface any real problem rather than silently blocking a valid borrow.
+ * `apiFetch` attaches the Better Auth JWT the backend's `verifyApi`
+ * requires; returns `false` when the check cannot be completed so the POST
+ * below surfaces any real problem rather than blocking a valid borrow.
  */
-async function hasExistingBorrow(
-  serverUrl: string | undefined,
-  email: string,
-  bookId: string,
-): Promise<boolean> {
-  if (!serverUrl) return false;
-
+async function hasExistingBorrow(email: string, bookId: string): Promise<boolean> {
   try {
-    const res = await fetch(
-      `${serverUrl}/borrows?email=${encodeURIComponent(email)}`,
-      { cache: "no-store" },
-    );
+    const res = await apiFetch(`/borrows?email=${encodeURIComponent(email)}`, {
+      cache: "no-store",
+    });
     if (!res.ok) return false;
 
     const data: unknown = await res.json();
@@ -64,10 +57,11 @@ export default function BookDetails({ params }: BookDetailsProps) {
 
   const router = useRouter();
 
-  // Real Better Auth session — the borrower's identity comes from here.
+  // Better Auth session state
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const user = session?.user ?? null;
 
+  // Load book details
   useEffect(() => {
     async function loadBook() {
       try {
@@ -91,7 +85,6 @@ export default function BookDetails({ params }: BookDetailsProps) {
     e.preventDefault();
     if (!book) return;
 
-    // Prevent duplicate borrow requests while one is already in flight.
     if (isSubmitting) return;
 
     if (book.totalCopies <= 0) {
@@ -99,7 +92,6 @@ export default function BookDetails({ params }: BookDetailsProps) {
       return;
     }
 
-    // Cookie expired mid-session: send them back to this book after login.
     if (!user) {
       setIsOpen(false);
       router.push(`/login?redirect=${encodeURIComponent(`/books/${id}`)}`);
@@ -108,7 +100,6 @@ export default function BookDetails({ params }: BookDetailsProps) {
 
     setIsSubmitting(true);
 
-    const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
     const bookId = book._id || id;
     const borrowData = {
       bookId,
@@ -124,12 +115,14 @@ export default function BookDetails({ params }: BookDetailsProps) {
     };
 
     try {
-      if (await hasExistingBorrow(serverUrl, user.email, bookId)) {
+      // Check existing borrow
+      if (await hasExistingBorrow(user.email, bookId)) {
         toast.error("You have already borrowed this book.", { id: "borrow" });
         return;
       }
 
-      const res = await fetch(`${serverUrl}/borrows`, {
+      // apiFetch attaches the Bearer JWT required by `verifyApi`.
+      const res = await apiFetch("/borrows", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(borrowData),
@@ -158,9 +151,6 @@ export default function BookDetails({ params }: BookDetailsProps) {
     }
   };
 
-  // This route is public (the proxy only guards /add-book, /my-books,
-  // /my-borrows and /profile), so borrowing still has to bounce signed-out
-  // visitors to login and bring them straight back here afterwards.
   const handleBorrowClick = () => {
     if (!user) {
       router.push(`/login?redirect=${encodeURIComponent(`/books/${id}`)}`);
