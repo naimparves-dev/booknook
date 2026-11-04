@@ -175,7 +175,7 @@ export default function BookDetails({ params }: BookDetailsProps) {
         {/* Back Link */}
         <div className="mb-6">
           <Link
-            href="/books"
+            href="/all-books"
             className="inline-flex items-center gap-2 text-sm text-[#64748B] hover:text-[#0F4A6B]"
           >
             ← Back to all books
